@@ -1,17 +1,26 @@
 package gol;
-import gol.GolGenerator;
-import gol.GolSettings;
-import gol.SwingRenderer;
+
 import java.util.Random;
 import java.util.Scanner;
+import javax.swing.*;
+import java.awt.*;
 
 
-public class Main {
+public class Main extends JPanel {
+    private int[][] matriz;
+    private int numRows;
+    private int numColumns;
+
     public static void main(String[] args) {
+        Run();
+    }
+
+    public static void Run() {
         Scanner sc = new Scanner(System.in);
-        int row, column, repetition, count = 0;
+        int row, column, repetition, count = 0, time;
         int[][] matriz;
         String begin;
+
         System.out.println("Enter the row number ");
         row = sc.nextInt();
         System.out.println("Enter the column number ");
@@ -21,34 +30,37 @@ public class Main {
         begin = sc.nextLine();
         System.out.println("Enter number of repetitions");
         repetition = sc.nextInt();
+        System.out.println("Generation time (in seconds): ");
+        time = sc.nextInt();
 
         if (begin.charAt(0) == '2') {
             matriz = RandomMatriz(row, column);
         } else {
             matriz = Matriz(column, row, begin);
         }
-        printMatriz(matriz);
+
+        JFrame frame = new JFrame("GOL");
+        Main matrixDisplay = new Main(matriz);
+        frame.add(matrixDisplay);
+        frame.setSize(800, 600);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setVisible(true);
+
         while (count < repetition) {
             matriz = rules(matriz);
-            printMatriz(matriz);
+            matrixDisplay.matriz = matriz;
+            matrixDisplay.repaint();
+            printMatriz(matriz); // Imprimir la matriz en la consola
             count++;
-        }
-        final GolGenerator generator = new GolGenerator() {
-            @Override
-            public String getNextGenerationAsString(long generation) {
-                // Just will switch
-                if (generation % 2 == 0) {
-                    return "X.X\nX.X\nXXX";
-                }
-                else
-                {
-                    return "...\n...\n...";
-                }
+            System.out.println("Generation number: " + (count));
+            try {
+                Thread.sleep(time * 1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
-        };
-        SwingRenderer.render(generator, new GolSettings(10, 10,1000, 0));
-    }
+        }
 
+    }
 
     public static int[][] Matriz(int col, int row, String par) {
         int[][] matriz = new int[row][col];
@@ -83,18 +95,19 @@ public class Main {
 
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < cols; j++) {
-                matriz[i][j] = random.nextInt(2); // Genera 0 o 1 aleatoriamente
+                matriz[i][j] = random.nextInt(2);
             }
         }
 
         return matriz;
     }
+
     public static int[][] rules(int[][] Matriz) {
         int[][] newMatriz = new int[Matriz.length][Matriz[0].length];
         for (int i = 0; i < Matriz.length; i++) {
             for (int j = 0; j < Matriz[0].length; j++) {
-                int count = Count_neighbours(Matriz, i, j);
-                //System.out.println(i+" "+j+" Tengo "+ count+" vecinos");
+                int count = countNeighbours(Matriz, i, j);
+                System.out.println("Soy " + i + "," + j + " y tengo: " + countNeighbours(Matriz, i, j) + " vecinos");
                 if (Matriz[i][j] == 1) {
                     if (count == 2 || count == 3) {
                         newMatriz[i][j] = 1;
@@ -111,6 +124,7 @@ public class Main {
 
         return newMatriz;
     }
+
     public static void printMatriz(int[][] Matriz) {
         for (int i = 0; i < Matriz.length; i++) {
             for (int j = 0; j < Matriz[0].length; j++) {
@@ -120,7 +134,8 @@ public class Main {
         }
         System.out.println("---------------------");
     }
-    public static int Count_neighbours(int[][] Matriz, int x, int y) {
+
+    public static int countNeighbours(int[][] Matriz, int x, int y) {
         int neighbours = 0;
         int[] dx = {-1, -1, -1, 0, 0, 1, 1, 1};
         int[] dy = {-1, 0, 1, -1, 1, -1, 0, 1};
@@ -135,5 +150,28 @@ public class Main {
         }
 
         return neighbours;
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+
+        int cellWidth = getWidth() / numColumns;
+        int cellHeight = getHeight() / numRows;
+
+        for (int i = 0; i < numRows; i++) {
+            for (int j = 0; j < numColumns; j++) {
+                int value = matriz[i][j];
+                Color color = (value == 1) ? Color.BLACK : Color.WHITE;
+                g.setColor(color);
+                g.fillRect(j * cellWidth, i * cellHeight, cellWidth, cellHeight);
+            }
+        }
+    }
+
+    public Main(int[][] matriz) {
+        this.matriz = matriz;
+        numRows = matriz.length;
+        numColumns = matriz[0].length;
     }
 }
